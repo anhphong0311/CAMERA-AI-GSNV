@@ -1,0 +1,12 @@
+# =============================================================================
+# AEMS Rule Engine — cooldown theo từng rule (giây)
+# Chống spam alert (Sprint 7 tiêu thụ). default áp dụng khi rule không có trong danh sách.
+# =============================================================================
+default: 300
+rules:
+  PHONE_USAGE: 60
+  AWAY_FROM_DESK: 600
+  PRIVATE_TALKING: 300
+  EATING: 300
+  SLEEPING: 120
+  IDLE: 600

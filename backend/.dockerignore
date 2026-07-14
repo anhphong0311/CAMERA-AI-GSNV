@@ -1,0 +1,24 @@
+# Backend Docker build context — keep image small & cache-friendly
+.venv/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+logs/
+data/backups/
+data/evidence/
+*.log
+tests/
+docs/
+*.md
+!README.md

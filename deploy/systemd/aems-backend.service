@@ -1,0 +1,18 @@
+[Unit]
+Description=AEMS Backend API (FastAPI)
+After=network.target postgresql.service redis.service
+Wants=postgresql.service redis.service
+
+[Service]
+Type=simple
+User=aems
+WorkingDirectory=/opt/aems/backend
+EnvironmentFile=/opt/aems/.env.production
+ExecStart=/opt/aems/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --proxy-headers
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,57 @@
+[run]
+source =
+    app/modules
+    app/core
+    app/services
+    app/schemas
+branch = false
+omit =
+    app/main.py
+    app/api/*
+    */dependencies.py
+    app/modules/performance/backends/onnx_backend.py
+    app/modules/performance/backends/tensorrt_backend.py
+    app/modules/performance/pipeline/orchestrator.py
+    app/modules/performance/cache/redis_cache.py
+    app/modules/performance/gpu/manager.py
+    app/modules/performance/monitor/collector.py
+    app/modules/performance/backends/factory.py
+    app/modules/performance/benchmark/compare.py
+    app/modules/camera/stream_worker/*
+    app/modules/camera/services/camera_service.py
+    app/modules/camera/repositories/camera_repository.py
+    app/modules/camera/camera_manager/manager.py
+    app/modules/camera/fps_monitor/monitor.py
+    app/modules/camera/utils/*
+    app/modules/event/repositories/sql_store.py
+    app/modules/event/history/history.py
+    app/modules/event/video_recorder/recorder.py
+    app/modules/tracking/config/loader.py
+    app/modules/performance/config/loader.py
+    app/modules/admin/scheduler/*
+    app/modules/admin/services/scheduler_service.py
+    app/modules/admin/services/system_service.py
+    app/modules/admin/services/storage_service.py
+    app/modules/ai/inference/backend.py
+    app/modules/ai/services/detection_service.py
+    app/modules/ai/utils/*
+    app/modules/ai/config/loader.py
+    app/modules/behavior/config/loader.py
+    app/modules/behavior/pose/yolo_pose.py
+    app/modules/behavior/pose/factory.py
+    app/config/*
+    app/exceptions/*
+    app/middleware/*
+    app/modules/ops/ai_worker.py
+    app/repositories/*
+    app/services/auth_service.py
+    */__init__.py
+
+[report]
+fail_under = 90
+show_missing = true
+precision = 1
+exclude_lines =
+    pragma: no cover
+    if TYPE_CHECKING:
+    raise NotImplementedError

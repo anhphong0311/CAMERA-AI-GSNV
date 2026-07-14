@@ -1,0 +1,41 @@
+# AEMS Backend — Production Dockerfile (Sprint 11)
+# Multi-stage: builder → runtime (không cài dev dependencies)
+
+FROM python:3.12-slim AS builder
+
+WORKDIR /build
+RUN apt-get update && apt-get install -y --no-install-recommends gcc libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.12-slim AS runtime
+
+LABEL org.opencontainers.image.title="AEMS Backend" \
+      org.opencontainers.image.description="AI Employee Monitoring System API" \
+      org.opencontainers.image.version="11.0.0"
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpq5 libglib2.0-0 libsm6 libxext6 curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && useradd --create-home --shell /bin/bash aems
+
+COPY --from=builder /install /usr/local
+COPY . .
+
+RUN chown -R aems:aems /app
+USER aems
+
+ENV PYTHONPATH=/app \
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=production
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=15s --timeout=10s --start-period=40s --retries=3 \
+    CMD curl -sf http://127.0.0.1:8000/api/v1/health || exit 1
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers", "--forwarded-allow-ips", "*"]

@@ -1,0 +1,101 @@
+# =============================================================================
+# AEMS Performance & Scaling — Sprint 10
+# Chỉ tối ưu — không đổi business logic.
+# =============================================================================
+
+# Backend inference: pytorch | onnx | tensorrt
+backend:
+  type: pytorch
+  onnx_path: models/yolo11n.onnx
+  tensorrt_path: models/yolo11n.engine
+  precision: fp32          # fp32 | fp16 | int8
+  auto_export_onnx: false  # export .pt → .onnx nếu thiếu file
+
+# Frame scheduler — giảm tải AI (30 FPS capture → 10 FPS inference)
+frame_scheduler:
+  enabled: true
+  target_ai_fps: 1         # ~1 FPS/camera trên CPU — tránh queue nghẽn khi infer chậm
+  max_capture_fps: 30        # FPS tối đa từ camera
+  skip_mode: adaptive      # adaptive | fixed | priority
+  priority_cameras: []       # camera_id ưu tiên (luôn xử lý)
+
+# Worker pool — pipeline async đa camera
+worker_pool:
+  detection_workers: 2
+  tracking_workers: 1
+  behavior_workers: 1
+  rule_workers: 1
+  event_workers: 1
+  notification_workers: 1
+  max_queue_depth: 32
+
+# Memory pool — tái sử dụng buffer frame
+memory:
+  frame_pool_size: 64
+  buffer_pool_size: 32
+  ring_buffer_seconds: 30
+
+# GPU / Multi-GPU
+gpu:
+  enabled: true
+  cuda_streams: 2
+  pinned_memory: true
+  load_balance: round_robin   # round_robin | least_loaded
+  devices: []                 # rỗng = auto detect all CUDA devices
+
+# Queue optimization
+queue:
+  use_priority: true
+  redis_backed: false         # true = metadata queue qua Redis (frame vẫn in-process)
+  drop_policy: oldest         # oldest | newest
+
+# Cache (Redis)
+cache:
+  enabled: true
+  ttl_seconds: 300
+  prefixes:
+    event: "cache:event:"
+    rule: "cache:rule:"
+    camera: "cache:camera:"
+    employee: "cache:employee:"
+
+# Database optimization (không đổi schema)
+database:
+  pool_size: 10
+  max_overflow: 20
+  pool_pre_ping: true
+  statement_cache_size: 100
+
+# Network / RTSP
+network:
+  rtsp_buffer_size: 1
+  reconnect_max_delay_s: 60
+  heartbeat_interval_s: 10
+  bandwidth_monitor: true
+
+# Pipeline bridge — nối Camera → AI → downstream (async workers)
+pipeline:
+  enabled: true
+  poll_interval_ms: 10
+  chain_tracking: true        # tracking + behavior cho nhận diện cầm điện thoại
+  chain_behavior: true
+  chain_rules: true           # cảnh báo PHONE_USAGE sau 10s
+
+# Benchmark & stress defaults
+benchmark:
+  runs: 50
+  warmup: 5
+  backends: [pytorch, onnx, tensorrt]
+
+stress:
+  durations_s: 5
+  camera_counts: [1, 5, 10, 20, 50, 100]
+
+# Performance targets (RTX series — tham chiếu báo cáo)
+targets:
+  rtx_3060:
+    cameras: {1: 30, 5: 25, 10: 20}
+  rtx_4070:
+    cameras: {20: 20}
+  rtx_4080:
+    cameras: {50: 20}

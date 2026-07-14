@@ -1,0 +1,62 @@
+# =============================================================================
+# AEMS AI Detection Engine — cấu hình detection (Sprint 3)
+# Mount read-only vào container: ./config/detection.yaml
+# Chỉ Object Detection — KHÔNG tracking/pose/rule engine.
+# =============================================================================
+
+model:
+  # Đường dẫn tới weight YOLO11 (.pt). Có thể đổi sang .onnx/.engine sau này
+  # mà không cần sửa business logic.
+  path: models/yolo11n.pt
+  name: yolo11n
+
+# Thiết bị chạy inference: auto | cpu | cuda:0
+device: auto
+
+# Half precision (FP16) — chỉ hiệu quả trên GPU
+half_precision: false
+
+# Kích thước ảnh đưa vào model (letterbox về image_size x image_size)
+# 640: cân bằng tốc độ CPU (~nhanh hơn 960 nhiều) và độ nhận diện
+image_size: 640
+
+# Ngưỡng IoU cho NMS
+nms_iou: 0.45
+
+# Batch size (Sprint 3 mặc định 1 — inference từng frame)
+batch_size: 1
+
+# Số detection tối đa giữ lại mỗi frame
+max_detections: 100
+
+# Ngưỡng confidence mặc định (fallback khi class không khai báo riêng)
+default_confidence: 0.5
+
+# Tự load + warmup model khi app startup (false nếu chưa có weight/torch)
+auto_load: true
+
+# Số frame warmup khi load model
+warmup_iterations: 3
+
+# =============================================================================
+# CLASS cần nhận diện — map nhãn logic → COCO class id + ngưỡng confidence.
+# COCO id: person=0, bottle=39, cup=41, chair=56, tv/monitor=62, laptop=63,
+#          mouse=64, keyboard=66, cell phone=67; food-group=46..55.
+# =============================================================================
+classes:
+  person:   { ids: [0],  confidence: 0.40 }
+  phone:    { ids: [67], confidence: 0.38 }
+  cup:      { ids: [41], confidence: 0.60 }
+  bottle:   { ids: [39], confidence: 0.50 }
+  food:     { ids: [46, 47, 48, 49, 50, 51, 52, 53, 54, 55], confidence: 0.55 }
+  laptop:   { ids: [63], confidence: 0.50 }
+  keyboard: { ids: [66], confidence: 0.50 }
+  mouse:    { ids: [64], confidence: 0.50 }
+  chair:    { ids: [56], confidence: 0.50 }
+  monitor:  { ids: [62], confidence: 0.50 }
+
+# Hàng đợi multi-camera — mỗi camera một queue riêng (drop oldest, không block).
+queue:
+  max_size: 5
+  num_workers: 4
+  poll_interval_ms: 5

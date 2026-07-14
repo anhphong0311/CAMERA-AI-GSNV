@@ -1,0 +1,97 @@
+# =============================================================================
+# AEMS Rule Engine — định nghĩa Rule (config-driven, KHÔNG hardcode)
+# Mỗi rule: bật/tắt, đổi ngưỡng/thời gian/severity/priority/cooldown mà KHÔNG sửa code.
+# conditions: dạng cây (operator AND/OR/NOT) hoặc danh sách (mặc định AND).
+# Leaf: {type: <fact>, operator: <==,!=,>,>=,<,<=,in,not_in,contains>, value: <...>}
+# Leaf đặc biệt type=duration: so với thời gian (giây) điều kiện được giữ liên tục.
+# =============================================================================
+
+- id: PHONE_USAGE
+  name: Phone Usage
+  description: Dùng điện thoại khi làm việc
+  enabled: true
+  severity: HIGH
+  priority: 1
+  cooldown: 90
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: phone_detected, operator: "==", value: true }
+      - { type: hand_near_phone, operator: "==", value: true }
+      - { type: duration, operator: ">", value: 5 }
+
+- id: AWAY_FROM_DESK
+  name: Away From Desk
+  description: Rời khỏi vị trí quá lâu (bàn trống)
+  enabled: true
+  severity: MEDIUM
+  priority: 2
+  cooldown: 300
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: away_from_desk, operator: "==", value: true }
+      - { type: duration, operator: ">", value: 180 }
+
+- id: PRIVATE_TALKING
+  name: Private Talking
+  description: Nói chuyện riêng, không làm việc
+  enabled: true
+  severity: MEDIUM
+  priority: 2
+  cooldown: 300
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: person_count, operator: ">=", value: 2 }
+      - { type: has_nearby_person, operator: "==", value: true }
+      - { type: working, operator: "==", value: false }
+      - { type: duration, operator: ">", value: 120 }
+
+- id: EATING
+  name: Eating
+  description: Ăn uống tại chỗ
+  enabled: true
+  severity: LOW
+  priority: 3
+  cooldown: 300
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: food_visible, operator: "==", value: true }
+      - { type: food_near_mouth, operator: "==", value: true }
+      - { type: duration, operator: ">", value: 60 }
+
+- id: SLEEPING
+  name: Sleeping
+  description: Ngủ gật (cúi đầu, ít chuyển động)
+  enabled: true
+  severity: HIGH
+  priority: 1
+  cooldown: 120
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: head_down, operator: "==", value: true }
+      - { type: low_motion, operator: "==", value: true }
+      - { type: duration, operator: ">", value: 20 }
+
+- id: IDLE
+  name: Idle
+  description: Đứng yên không thao tác làm việc
+  enabled: true
+  severity: LOW
+  priority: 3
+  cooldown: 600
+  actions: [alert]
+  conditions:
+    operator: AND
+    conditions:
+      - { type: stationary, operator: "==", value: true }
+      - { type: working, operator: "==", value: false }
+      - { type: duration, operator: ">", value: 600 }

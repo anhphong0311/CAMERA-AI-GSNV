@@ -1,0 +1,9 @@
+# =============================================================================
+# AEMS Notification — cấu hình queue + dedup + cooldown (Sprint 7)
+# Mount read-only: /config/notification.yaml (env NOTIFICATION_CONFIG_PATH)
+# =============================================================================
+enabled: true
+channel: telegram             # provider mặc định
+cooldown_seconds: 60          # khớp cooldown PHONE_USAGE
+dedup_window_seconds: 60      # cùng rule + person trong 60s → không gửi thêm
+queue_max: 1000

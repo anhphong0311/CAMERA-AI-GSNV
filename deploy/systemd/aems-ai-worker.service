@@ -1,0 +1,17 @@
+[Unit]
+Description=AEMS AI Worker Pipeline
+After=aems-backend.service
+Requires=aems-backend.service
+
+[Service]
+Type=simple
+User=aems
+WorkingDirectory=/opt/aems/backend
+EnvironmentFile=/opt/aems/.env.production
+ExecStart=/opt/aems/venv/bin/python -m app.modules.ops.ai_worker
+Restart=always
+RestartSec=10
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target

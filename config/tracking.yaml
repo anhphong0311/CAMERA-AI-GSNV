@@ -1,0 +1,56 @@
+# =============================================================================
+# AEMS Tracking Engine — cấu hình tracking (Sprint 4)
+# Mount read-only: ./config/tracking.yaml
+# Tracking Engine ĐỘC LẬP — chỉ nhận DetectionResult, KHÔNG detect/YOLO/pose.
+# =============================================================================
+
+tracker:
+  # Loại thuật toán tracking. Sau này đổi: deepsort | ocsort | strongsort
+  type: bytetrack
+  # Ngưỡng confidence tách detection cao/thấp (2-stage association của ByteTrack)
+  track_thresh: 0.5
+  # Ngưỡng confidence tối thiểu để tạo track mới
+  new_track_thresh: 0.6
+  # Ngưỡng detection thấp (stage 2)
+  low_thresh: 0.1
+  # Ngưỡng matching (cost = 1 - IoU); match khi cost <= match_thresh
+  match_thresh: 0.8
+  # Số frame giữ track khi bị mất trước khi xóa (buffer phục hồi ID)
+  track_buffer: 30
+  # Diện tích bbox tối thiểu (px^2) để nhận track
+  min_box_area: 100.0
+  # FPS giả định của luồng (chuẩn hóa track_buffer)
+  frame_rate: 30
+
+lifecycle:
+  # Số frame mất tối đa trước khi REMOVED (đồng bộ track_buffer)
+  max_lost_frames: 30
+  # Số track tối đa mỗi camera (chống tràn bộ nhớ)
+  max_tracks: 300
+
+motion:
+  # Số điểm path tối đa lưu cho mỗi track
+  history_size: 60
+  # Tốc độ (px/frame) dưới ngưỡng này coi là đứng yên
+  stationary_speed: 2.0
+
+roi:
+  # ROI toàn cục áp dụng cho mọi camera (nếu không có override theo camera).
+  # polygon: danh sách [x, y] pixel theo khung hình gốc.
+  regions: []
+  # Override ROI theo từng camera: { "<camera_id>": [ {id,name,polygon,...} ] }
+  cameras: {}
+
+# Ví dụ ROI (bỏ comment để dùng):
+# roi:
+#   regions:
+#     - id: desk_01
+#       name: "Desk 01"
+#       polygon: [[0, 0], [320, 0], [320, 240], [0, 240]]
+#       color: "#22c55e"
+#       description: "Bàn làm việc 01"
+#     - id: door
+#       name: "Door"
+#       polygon: [[500, 0], [640, 0], [640, 200], [500, 200]]
+#       color: "#ef4444"
+#       description: "Cửa ra vào"

@@ -1,0 +1,42 @@
+{
+  "annotations": {"list": []},
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "reqps"}},
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+      "id": 1,
+      "targets": [{"expr": "aems_http_requests_total", "legendFormat": "Total Requests"}],
+      "title": "HTTP Requests",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "Prometheus"},
+      "fieldConfig": {"defaults": {"unit": "s"}},
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+      "id": 2,
+      "targets": [{"expr": "aems_http_request_latency_seconds_avg", "legendFormat": "Avg Latency"}],
+      "title": "API Latency",
+      "type": "timeseries"
+    },
+    {
+      "gridPos": {"h": 4, "w": 24, "x": 0, "y": 8},
+      "id": 3,
+      "options": {"content": "# AEMS Operations Dashboard\nMonitor CPU/GPU/Camera via `/api/v1/system/performance` and Prometheus `/metrics`."},
+      "title": "Info",
+      "type": "text"
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["aems", "production"],
+  "templating": {"list": []},
+  "time": {"from": "now-1h", "to": "now"},
+  "title": "AEMS Production Overview",
+  "uid": "aems-prod-overview",
+  "version": 1
+}

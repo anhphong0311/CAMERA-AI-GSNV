@@ -1,0 +1,58 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.log
+
+# ===== Secrets / env (never commit) =====
+.env
+.env.*
+!.env.example
+!.env.*.example
+!**/.env.example
+
+# ===== Node / Frontend =====
+node_modules/
+dist/
+dist-ssr/
+*.local
+.vite/
+
+# ===== Docker / Data =====
+pgdata/
+redisdata/
+miniodata/
+data/evidence/**
+!data/evidence/.gitkeep
+backend/data/backups/
+
+# ===== AI artifacts =====
+models/*
+!models/.gitkeep
+!models/README.md
+snapshots/*
+!snapshots/.gitkeep
+videos/*
+!videos/.gitkeep
+logs/*
+!logs/.gitkeep
+
+# ===== IDE / OS / caches =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+playwright-report/
+test-results/
+.claude/
+
+# ===== Local demo binaries =====
+.demo/
+

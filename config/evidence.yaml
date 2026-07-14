@@ -1,0 +1,24 @@
+# =============================================================================
+# AEMS Evidence Engine — cấu hình (Sprint Evidence)
+# Mount read-only: /config/evidence.yaml (env EVIDENCE_CONFIG_PATH)
+# =============================================================================
+
+frame_buffer:
+  seconds: 30                 # Circular buffer 15~30 giây
+  fps: 15                     # FPS lưu trong buffer
+
+phone:
+  confirm_seconds: 5          # Đồng bộ rules.yaml PHONE duration
+  gap_reset_seconds: 8        # Phone mất > 8 giây → reset timer (AI FPS thấp trên CPU)
+
+leave:
+  confirm_seconds: 180        # Đồng bộ rules.yaml AWAY duration (3 phút)
+  cancel_return_seconds: 180    # Quay lại trước ngưỡng → hủy event
+
+video:
+  pre_seconds: 10             # 10 giây trước thời điểm evidence
+  post_seconds: 10            # 10 giây sau thời điểm evidence
+  max_wait_seconds: 15        # Chờ tối đa post-roll trước khi gửi Telegram
+
+snapshot:
+  use_evidence_time: true     # Snapshot tại evidence_time, không phải lúc gửi

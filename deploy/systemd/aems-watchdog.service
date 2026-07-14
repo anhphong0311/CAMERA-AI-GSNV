@@ -1,0 +1,16 @@
+[Unit]
+Description=AEMS Watchdog Monitor
+After=aems-backend.service
+
+[Service]
+Type=simple
+User=aems
+WorkingDirectory=/opt/aems/backend
+EnvironmentFile=/opt/aems/.env.production
+Environment=WATCHDOG_BACKEND_URL=http://127.0.0.1:8000
+ExecStart=/opt/aems/venv/bin/python -m app.modules.ops.watchdog
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

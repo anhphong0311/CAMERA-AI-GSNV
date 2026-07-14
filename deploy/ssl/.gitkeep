@@ -1,0 +1,4 @@
+# Place SSL certificates here (not committed):
+#   fullchain.pem
+#   privkey.pem
+# Generate: bash deploy/ssl/generate-self-signed.sh localhost

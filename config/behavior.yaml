@@ -1,0 +1,48 @@
+# =============================================================================
+# AEMS Behavior Feature Engine — cấu hình (Sprint 5)
+# Mount read-only: ./config/behavior.yaml
+# CHỈ trích xuất đặc trưng (feature extraction). KHÔNG rule/alert/telegram/DB.
+# =============================================================================
+
+pose:
+  # Loại pose model: yolo | mediapipe (thiết kế interface cho phép đổi)
+  type: yolo
+  model_path: models/yolo11n-pose.pt
+  device: auto
+  image_size: 640
+  # Ngưỡng confidence cho detection người của pose model
+  confidence: 0.35
+  # Ngưỡng confidence cho từng keypoint (dưới ngưỡng coi là thiếu joint)
+  keypoint_confidence: 0.2
+  half_precision: false
+  warmup_iterations: 2
+  auto_load: true
+
+associator:
+  # Ngưỡng IoU để gán pose (khung người) với track từ Tracking Engine
+  iou_threshold: 0.15
+
+thresholds:
+  # HEAD — tỉ lệ so với khoảng cách vai (shoulder width)
+  head_side_ratio: 0.15      # |nose.x - neck.x|/scale > ratio → LEFT/RIGHT
+  head_down_ratio: 0.35      # (nose.y - ear_mid.y)/scale > ratio → DOWN
+  head_up_ratio: -0.05       # < ratio → UP
+  head_stability_window: 15  # số frame tính độ ổn định đầu
+  # BODY
+  lean_forward_ratio: 0.15   # (shoulder_mid.x - hip_mid.x)/torso > ratio → FORWARD
+  # HAND
+  hand_near_face_ratio: 0.6  # distance wrist↔nose < ratio*scale → gần mặt
+  hand_near_phone_px: 160     # khoảng cách (px) wrist↔phone → gần điện thoại (góc gần/desk)
+  # FOOD
+  food_near_mouth_ratio: 0.7 # distance object↔mouth < ratio*scale → gần miệng
+  # SITTING — tỉ lệ chiều dài chân/thân
+  standing_leg_ratio: 1.1    # (ankle.y - hip.y)/torso > ratio → đứng
+  # MOTION
+  stationary_speed: 2.0      # px/frame dưới ngưỡng → đứng yên
+
+temporal:
+  buffer_size: 300           # 300 frame buffer cho mỗi track
+  window: 30                 # cửa sổ tính đặc trưng thời gian ngắn
+  max_tracks: 500            # số track tối đa giữ buffer (chống tràn)
+
+frame_rate: 30               # dùng quy đổi frame → giây

@@ -1,0 +1,25 @@
+# Prometheus — AEMS Sprint 11
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: aems-backend
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: backend
+
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: aems-health
+    metrics_path: /api/v1/health/full
+    scrape_interval: 30s
+    static_configs:
+      - targets: ["backend:8000"]
+        labels:
+          service: health

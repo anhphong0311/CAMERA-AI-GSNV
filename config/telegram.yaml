@@ -1,0 +1,20 @@
+# =============================================================================
+# AEMS Telegram Service — cấu hình (Sprint 7)
+# Mount read-only: /config/telegram.yaml (env TELEGRAM_CONFIG_PATH)
+# Secret nạp qua ENV: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID (ưu tiên hơn file).
+#
+# Lệnh nhóm (chỉ chat_id được phép):
+#   /bat | /system_on | /on   — BẬT toàn bộ giám sát
+#   /tat | /system_off | /off — TẮT toàn bộ giám sát
+#   /system_status            — xem đang bật/tắt
+# =============================================================================
+enabled: true                 # bật khi đã cấu hình token/chat_id (ENV ưu tiên)
+bot_token: ""
+chat_id: ""
+api_base: https://api.telegram.org
+timeout_seconds: 30           # đủ gửi ảnh; video lớn dễ timeout nếu quá thấp
+send_snapshot: true
+send_video: false             # gửi snapshot ngay; video evidence lưu local (tránh timeout)
+retry:
+  max_attempts: 3
+  backoff: [1, 5, 10]         # giây — 1s, 5s, 10s

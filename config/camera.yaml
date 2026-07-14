@@ -1,0 +1,34 @@
+# =============================================================================
+# AEMS Camera Service — cấu hình stream RTSP (Sprint 2)
+# Mount read-only vào container: ./config/camera.yaml
+# =============================================================================
+
+# Thời gian chờ giữa các lần reconnect (giây) — exponential backoff
+reconnect_delays: [1, 3, 5, 10, 30]
+
+# Kích thước queue frame mỗi camera (bounded — drop oldest khi đầy)
+# Preview/dashboard chỉ cần latest; evidence dùng buffer riêng (evidence.yaml)
+queue_size: 45
+
+# FPS mục tiêu khi đọc stream (sleep giữa các frame nếu đọc quá nhanh)
+target_fps: 15
+
+# Circular buffer camera service — đủ cho health/FPS (~3s @ 15fps)
+buffer_size: 45
+
+# Resize frame khi đọc (0 = giữ nguyên kích thước gốc)
+frame_width: 0
+frame_height: 0
+
+# Timeout kết nối / đọc RTSP (giây)
+timeout_seconds: 10
+
+# Tự khởi động worker cho camera enabled=true khi app startup
+auto_start_enabled: true
+
+# Chu kỳ ghi heartbeat vào DB (giây)
+heartbeat_interval_seconds: 5
+
+# Preview live view (GET /cameras/{id}/frame) — giảm lag dashboard
+preview_jpeg_quality: 60
+preview_max_width: 960

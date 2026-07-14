@@ -1,0 +1,38 @@
+# =============================================================================
+# AEMS Rule Engine — cấu hình engine (Sprint 6)
+# Mount read-only: ./config/rule_engine.yaml  (env RULE_ENGINE_CONFIG_PATH)
+# Rule Engine KHÔNG dùng AI model, KHÔNG Telegram, KHÔNG Database, KHÔNG Dashboard.
+# =============================================================================
+
+# Cửa sổ lọc trùng (giây): cùng rule + cùng person trong khoảng này → không tạo event mới
+duplicate_window: 300
+
+# Cooldown mặc định (giây) nếu rule không khai báo riêng
+default_cooldown: 300
+
+# Số frame liên tục thỏa điều kiện trước khi bắt đầu tính thời gian (chống nhiễu)
+confirmation_frames: 1
+
+# Ngưỡng tốc độ (px/frame) coi là "ít chuyển động"
+low_motion_speed: 2.0
+
+# Khoảng cách (px) giữa 2 người coi là "ở gần" (private talking)
+nearby_person_distance: 150.0
+
+# Các cửa sổ thời gian theo dõi (giây) — phục vụ temporal analysis / thống kê
+temporal_windows: [10, 30, 60, 300, 600, 1800]
+
+# Giới hạn state (chống memory leak)
+max_states: 5000
+
+# Tính điểm hiệu suất
+performance:
+  window_minutes: 60
+  # Trọng số phạt cho từng loại hành vi (càng cao càng trừ nhiều điểm)
+  weights:
+    phone: 1.0
+    talking: 0.8
+    eating: 0.5
+    sleeping: 1.5
+    away: 1.0
+    idle: 0.7

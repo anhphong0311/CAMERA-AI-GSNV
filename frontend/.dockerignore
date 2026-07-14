@@ -1,0 +1,18 @@
+# Frontend Docker build context
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+.vite/
+.git/
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+*.md
+!README.md
+e2e/
+src/**/*.test.*
+src/**/*.spec.*

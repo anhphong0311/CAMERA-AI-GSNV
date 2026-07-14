@@ -1,0 +1,32 @@
+# AEMS Backend - Sprint 1 dependencies
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy[asyncio]==2.0.36
+asyncpg==0.30.0
+alembic==1.14.0
+pydantic==2.10.3
+pydantic-settings==2.6.1
+python-jose[cryptography]==3.3.0
+passlib[argon2]==1.7.4
+python-multipart==0.0.20
+redis==5.2.1
+loguru==0.7.3
+httpx==0.28.1
+email-validator==2.2.0
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+pyyaml==6.0.2
+# ----- Sprint 3: AI Detection Engine -----
+# ultralytics kéo theo torch/torchvision phù hợp nền tảng khi cài trong Docker.
+ultralytics==8.3.0
+psutil==6.1.1
+# ----- Sprint 5: Behavior Feature Engine -----
+# Pose dùng chung ultralytics (weight yolo11n-pose.pt). Không thêm dependency mới.
+# ----- Sprint 6: AI Rule Engine -----
+# Chỉ dùng pyyaml/pydantic/loguru đã có. Không AI model, không dependency mới.
+# ----- Sprint 7: Event Processing & Notification Center -----
+# Telegram dùng httpx (đã có). Snapshot/Video dùng opencv-python-headless (đã có).
+# Không thêm dependency mới.
+# ----- Sprint 10: Performance Optimization -----
+# ONNX Runtime (optional — cần cho backend onnx/tensorrt)
+onnxruntime==1.20.1

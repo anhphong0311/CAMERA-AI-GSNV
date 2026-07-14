@@ -1,0 +1,9 @@
+# =============================================================================
+# AEMS Rule Engine — mức độ nghiêm trọng (severity)
+# =============================================================================
+levels:
+  CRITICAL: { rank: 5, color: "#dc2626" }
+  HIGH:     { rank: 4, color: "#f97316" }
+  MEDIUM:   { rank: 3, color: "#eab308" }
+  LOW:      { rank: 2, color: "#3b82f6" }
+  INFO:     { rank: 1, color: "#6b7280" }

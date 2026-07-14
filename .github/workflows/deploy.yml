@@ -1,0 +1,103 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Target environment
+        required: true
+        default: production
+        type: choice
+        options:
+          - production
+          - staging
+  push:
+    branches: [main]
+    paths:
+      - "docker-compose.production.yml"
+      - "backend/Dockerfile.production"
+      - "frontend/Dockerfile.production"
+      - "deploy/**"
+
+jobs:
+  validate:
+    name: Validate Production Stack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: Run deployment config tests
+        working-directory: backend
+        run: |
+          pip install pytest
+          python -m pytest tests/deploy/test_deployment_config.py -q
+
+      - name: Validate compose config
+        run: |
+          cp .env.production.example .env.production
+          docker compose -f docker-compose.production.yml config --quiet
+
+      - name: Generate self-signed SSL
+        run: |
+          mkdir -p deploy/ssl
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout deploy/ssl/privkey.pem \
+            -out deploy/ssl/fullchain.pem \
+            -subj "/CN=localhost"
+
+      - name: Build production images
+        run: |
+          docker compose -f docker-compose.production.yml --env-file .env.production build
+
+  deploy:
+    name: Deploy (manual / main)
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to registry
+        if: ${{ secrets.REGISTRY_USERNAME != '' }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build & tag production images
+        env:
+          VERSION: ${{ github.sha }}
+        run: |
+          docker build -f backend/Dockerfile.production -t aems-backend:${VERSION} backend
+          docker build -f frontend/Dockerfile.production \
+            --build-arg VITE_API_BASE_URL=/api/v1 \
+            --build-arg VITE_WS_URL=wss://localhost/api/v1/ws \
+            -t aems-frontend:${VERSION} frontend
+
+      - name: Push images
+        if: ${{ secrets.REGISTRY_USERNAME != '' }}
+        env:
+          VERSION: ${{ github.sha }}
+          REGISTRY: ${{ secrets.REGISTRY_USERNAME }}
+        run: |
+          docker tag aems-backend:${VERSION} ${REGISTRY}/aems-backend:${VERSION}
+          docker tag aems-backend:${VERSION} ${REGISTRY}/aems-backend:latest
+          docker tag aems-frontend:${VERSION} ${REGISTRY}/aems-frontend:${VERSION}
+          docker tag aems-frontend:${VERSION} ${REGISTRY}/aems-frontend:latest
+          docker push ${REGISTRY}/aems-backend:${VERSION}
+          docker push ${REGISTRY}/aems-backend:latest
+          docker push ${REGISTRY}/aems-frontend:${VERSION}
+          docker push ${REGISTRY}/aems-frontend:latest
+
+      - name: Deploy note
+        run: |
+          echo "Images built. Run deploy/scripts/install.sh on target host with .env.production."

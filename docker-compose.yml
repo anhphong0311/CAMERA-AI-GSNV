@@ -1,0 +1,158 @@
+# =============================================================================
+# AEMS — Docker Compose (Sprint 1 Foundation)
+# Chạy: docker compose up -d --build
+# Migration: docker compose exec backend alembic upgrade head
+# =============================================================================
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: aems-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-aems}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_strong_password}
+      POSTGRES_DB: ${POSTGRES_DB:-aems}
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-aems} -d ${POSTGRES_DB:-aems}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aems-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: aems-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD:-change_me_redis_password}
+      --appendonly yes
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-change_me_redis_password}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aems-net
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: aems-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-aems}:${POSTGRES_PASSWORD:-change_me_strong_password}@postgres:5432/${POSTGRES_DB:-aems}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-change_me_redis_password}
+      BACKEND_CORS_ORIGINS: ${BACKEND_CORS_ORIGINS:-http://localhost:5173,http://localhost:8080}
+      LOG_DIR: /app/logs
+      CAMERA_CONFIG_PATH: /config/camera.yaml
+      DETECTION_CONFIG_PATH: /config/detection.yaml
+      TRACKING_CONFIG_PATH: /config/tracking.yaml
+      BEHAVIOR_CONFIG_PATH: /config/behavior.yaml
+      PERFORMANCE_CONFIG_PATH: /config/performance.yaml
+      RULE_ENGINE_CONFIG_PATH: /config/rule_engine.yaml
+      RULES_CONFIG_PATH: /config/rules.yaml
+      SEVERITY_CONFIG_PATH: /config/severity.yaml
+      COOLDOWN_CONFIG_PATH: /config/cooldown.yaml
+      EVENT_CONFIG_PATH: /config/event.yaml
+      SNAPSHOT_CONFIG_PATH: /config/snapshot.yaml
+      RECORDER_CONFIG_PATH: /config/recorder.yaml
+      NOTIFICATION_CONFIG_PATH: /config/notification.yaml
+      TELEGRAM_CONFIG_PATH: /config/telegram.yaml
+      EVIDENCE_CONFIG_PATH: /config/evidence.yaml
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      SYSTEM_STATE_PATH: /app/logs/system_state.json
+      AEMS_PUBLIC_URL: ${AEMS_PUBLIC_URL:-http://localhost:8080}
+      AEMS_REALTIME_DEMO: ${AEMS_REALTIME_DEMO:-false}
+      OPENCV_FFMPEG_CAPTURE_OPTIONS: rtsp_transport;tcp
+      MODELS_DIR: /models
+      TZ: ${TZ:-Asia/Ho_Chi_Minh}
+    volumes:
+      - ./logs:/app/logs
+      - ./data/evidence:/app/data/evidence
+      - ./backend/app:/app/app
+      - ./config/camera.yaml:/config/camera.yaml:ro
+      - ./config/detection.yaml:/config/detection.yaml:ro
+      - ./config/tracking.yaml:/config/tracking.yaml:ro
+      - ./config/behavior.yaml:/config/behavior.yaml:ro
+      - ./config/performance.yaml:/config/performance.yaml:ro
+      - ./config/rule_engine.yaml:/config/rule_engine.yaml:ro
+      - ./config/rules.yaml:/config/rules.yaml:ro
+      - ./config/severity.yaml:/config/severity.yaml:ro
+      - ./config/cooldown.yaml:/config/cooldown.yaml:ro
+      - ./config/event.yaml:/config/event.yaml:ro
+      - ./config/evidence.yaml:/config/evidence.yaml:ro
+      - ./config/snapshot.yaml:/config/snapshot.yaml:ro
+      - ./config/recorder.yaml:/config/recorder.yaml:ro
+      - ./config/notification.yaml:/config/notification.yaml:ro
+      - ./config/telegram.yaml:/config/telegram.yaml:ro
+      - ./models:/models
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - aems-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8080/api/v1}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:8080/api/v1/ws}
+    container_name: aems-frontend
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    networks:
+      - aems-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: aems-nginx
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - aems-net
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  aems-net:
+    driver: bridge

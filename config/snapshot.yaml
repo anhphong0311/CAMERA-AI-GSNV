@@ -1,0 +1,9 @@
+# =============================================================================
+# AEMS Snapshot Service — cấu hình (Sprint 7)
+# Mount read-only: /config/snapshot.yaml (env SNAPSHOT_CONFIG_PATH)
+# =============================================================================
+enabled: true
+format: jpg
+quality: 90          # 0..100 (JPEG)
+dir: data/evidence/snapshots
+timeout_ms: 200      # yêu cầu snapshot < 200ms

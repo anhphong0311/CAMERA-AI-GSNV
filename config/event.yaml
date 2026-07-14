@@ -1,0 +1,24 @@
+# =============================================================================
+# AEMS Event Processing Center — cấu hình chung (Sprint 7)
+# Mount read-only: /config/event.yaml (env EVENT_CONFIG_PATH)
+# =============================================================================
+
+# Thư mục gốc lưu evidence (snapshot + video)
+storage_dir: data/evidence
+
+# Bật kiểm tra event trước khi xử lý
+validate_events: true
+
+# Bật/tắt từng bước pipeline
+process_snapshot: true
+process_video: true
+process_notification: true
+
+# Ghi vào Database (SqlEventStore). false → chỉ in-memory.
+persist_db: false
+
+# Giới hạn lịch sử event giữ trong bộ nhớ (chống memory leak)
+history_size: 2000
+
+# Số worker xử lý notification chạy nền
+notification_workers: 1

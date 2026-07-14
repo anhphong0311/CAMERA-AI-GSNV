@@ -1,0 +1,13 @@
+# =============================================================================
+# AEMS Video Recorder — cấu hình (Sprint 7)
+# Mount read-only: /config/recorder.yaml (env RECORDER_CONFIG_PATH)
+# Chỉ lưu Evidence (pre + post event), KHÔNG lưu toàn bộ video.
+# =============================================================================
+enabled: true
+pre_seconds: 10               # 10 giây trước event
+post_seconds: 10              # 10 giây sau event
+fps: 15
+codec: mp4v                   # fallback XVID nếu mp4v không khả dụng
+dir: data/evidence/videos
+ring_buffer_seconds: 30       # RAM giữ 30 giây gần nhất mỗi camera
+max_export_seconds: 5         # yêu cầu export < 5s
