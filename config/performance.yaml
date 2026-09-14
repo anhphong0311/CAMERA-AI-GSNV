@@ -15,7 +15,7 @@ backend:
 frame_scheduler:
   enabled: true
   target_ai_fps: 1         # ~1 FPS/camera trên CPU — tránh queue nghẽn khi infer chậm
-  max_capture_fps: 30        # FPS tối đa từ camera
+  max_capture_fps: 5         # Đồng bộ camera CPU mode: tránh decode frame không dùng
   skip_mode: adaptive      # adaptive | fixed | priority
   priority_cameras: []       # camera_id ưu tiên (luôn xử lý)
 
@@ -76,7 +76,7 @@ network:
 # Pipeline bridge — nối Camera → AI → downstream (async workers)
 pipeline:
   enabled: true
-  poll_interval_ms: 10
+  poll_interval_ms: 50       # 20 vòng/giây là đủ cho target AI 1 FPS
   chain_tracking: true        # tracking + behavior cho nhận diện cầm điện thoại
   chain_behavior: true
   chain_rules: true           # cảnh báo PHONE_USAGE sau 10s

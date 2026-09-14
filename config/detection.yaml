@@ -58,5 +58,5 @@ classes:
 # Hàng đợi multi-camera — mỗi camera một queue riêng (drop oldest, không block).
 queue:
   max_size: 5
-  num_workers: 4
+  num_workers: 2
   poll_interval_ms: 5

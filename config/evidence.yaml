@@ -5,7 +5,7 @@
 
 frame_buffer:
   seconds: 30                 # Circular buffer 15~30 giây
-  fps: 15                     # FPS lưu trong buffer
+  fps: 5                      # Đủ cho evidence, giảm 2/3 RAM/CPU khi có 6 camera
 
 phone:
   confirm_seconds: 5          # Đồng bộ rules.yaml PHONE duration

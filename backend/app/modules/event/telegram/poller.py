@@ -127,6 +127,26 @@ class TelegramCommandPoller:
             logger.exception("Telegram command failed: {}", cmd)
             reply = f"⚠️ Lỗi xử lý lệnh: {exc}"
 
-        await asyncio.to_thread(
-            self._service.send_telegram_text, str(chat_id), reply
-        )
+        await self._send_reply(str(chat_id), reply)
+
+    async def _send_reply(self, chat_id: str, reply: str) -> None:
+        """Deliver command replies reliably when Telegram DNS/network blips."""
+        last_error: Optional[Exception] = None
+        for attempt, delay in enumerate((1.0, 3.0, 5.0), start=1):
+            try:
+                result = await asyncio.to_thread(
+                    self._service.send_telegram_text, chat_id, reply
+                )
+                if result.ok:
+                    logger.info("Telegram command reply sent (attempt={})", attempt)
+                    return
+                last_error = RuntimeError("Telegram command reply was not delivered")
+            except Exception as exc:  # network / DNS failures are transient
+                last_error = exc
+                logger.warning(
+                    "Telegram command reply failed (attempt={}/3): {}", attempt, exc
+                )
+            if attempt < 3:
+                await asyncio.sleep(delay)
+
+        logger.error("Telegram command reply permanently failed: {}", last_error)

@@ -17,7 +17,9 @@ class CameraStreamConfig(BaseModel):
     Mọi worker dùng chung config mặc định; có thể override per-camera sau này.
     """
 
-    reconnect_delays: List[int] = Field(default=[1, 3, 5, 10, 30])
+    # Conservative defaults keep a simultaneous network outage from creating
+    # a reconnect storm across all camera workers.
+    reconnect_delays: List[int] = Field(default=[5, 15, 30, 60, 120])
     queue_size: int = Field(default=30, ge=1, le=500)
     target_fps: int = Field(default=15, ge=1, le=60)
     buffer_size: int = Field(default=120, ge=10)
