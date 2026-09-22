@@ -4,6 +4,7 @@ FastAPI application entry point.
 Khởi tạo app, lifespan (DB + Redis), middleware, exception handlers, routes.
 """
 
+import asyncio
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -110,8 +111,28 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await init_system_control(app)
     logger.info("System control initialized")
 
+    camera_alert_task = None
+    camera_config = app.state.camera_config
+    if camera_config.telegram_alerts_enabled:
+        from app.modules.camera.health_check.telegram_alerts import CameraTelegramAlerts
+
+        camera_alert_task = asyncio.create_task(
+            CameraTelegramAlerts(
+                app.state.camera_manager,
+                camera_config,
+                monitoring_enabled=lambda: app.state.system_control.is_monitoring,
+            ).run()
+        )
+        logger.info("Camera Telegram alert monitor initialized")
+
     yield
 
+    if camera_alert_task is not None:
+        camera_alert_task.cancel()
+        try:
+            await camera_alert_task
+        except asyncio.CancelledError:
+            pass
     await shutdown_performance_module(app)
     await shutdown_ml_platform_module(app)
     await shutdown_admin_module(app)

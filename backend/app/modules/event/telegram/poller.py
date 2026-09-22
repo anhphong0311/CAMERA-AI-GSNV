@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import time
 from typing import Any, Awaitable, Callable, Optional, Union
 
 from loguru import logger
@@ -35,6 +36,7 @@ class TelegramCommandPoller:
         self._offset: Optional[int] = None
         self._task: Optional[asyncio.Task] = None
         self._running = False
+        self._last_poll_error_log = 0.0
 
     @property
     def running(self) -> bool:
@@ -63,11 +65,19 @@ class TelegramCommandPoller:
             try:
                 updates = await asyncio.to_thread(self._fetch_updates)
                 for upd in updates:
-                    await self._process_update(upd)
+                    if not await self._process_update(upd):
+                        await asyncio.sleep(10.0)
+                        break
             except asyncio.CancelledError:
                 break
             except Exception as exc:
-                logger.debug("Telegram poll skipped: {}", exc)
+                now = time.monotonic()
+                if now - self._last_poll_error_log >= 60.0:
+                    logger.warning(
+                        "Telegram command polling unavailable | error_type={}",
+                        type(exc).__name__,
+                    )
+                    self._last_poll_error_log = now
                 await asyncio.sleep(3.0)
 
     def _fetch_updates(self) -> list[dict[str, Any]]:
@@ -92,29 +102,32 @@ class TelegramCommandPoller:
             return False
         return str(chat_id).strip() == allowed
 
-    async def _process_update(self, update: dict[str, Any]) -> None:
+    async def _process_update(self, update: dict[str, Any]) -> bool:
         uid = update.get("update_id")
-        if uid is not None:
-            self._offset = int(uid) + 1
+        next_offset = int(uid) + 1 if uid is not None else self._offset
 
         message = update.get("message") or update.get("edited_message")
         if not message:
-            return
+            self._offset = next_offset
+            return True
         text = (message.get("text") or "").strip()
         if not text.startswith("/"):
-            return
+            self._offset = next_offset
+            return True
 
         chat = message.get("chat") or {}
         chat_id = chat.get("id")
         if chat_id is None:
-            return
+            self._offset = next_offset
+            return True
 
         if not self._is_allowed_chat(chat_id):
             logger.warning(
                 "Telegram command ignored from unauthorized chat_id={}",
                 chat_id,
             )
-            return
+            self._offset = next_offset
+            return True
 
         cmd = text.split("@")[0]
         try:
@@ -127,9 +140,12 @@ class TelegramCommandPoller:
             logger.exception("Telegram command failed: {}", cmd)
             reply = f"⚠️ Lỗi xử lý lệnh: {exc}"
 
-        await self._send_reply(str(chat_id), reply)
+        if not await self._send_reply(str(chat_id), reply):
+            return False
+        self._offset = next_offset
+        return True
 
-    async def _send_reply(self, chat_id: str, reply: str) -> None:
+    async def _send_reply(self, chat_id: str, reply: str) -> bool:
         """Deliver command replies reliably when Telegram DNS/network blips."""
         last_error: Optional[Exception] = None
         for attempt, delay in enumerate((1.0, 3.0, 5.0), start=1):
@@ -139,14 +155,20 @@ class TelegramCommandPoller:
                 )
                 if result.ok:
                     logger.info("Telegram command reply sent (attempt={})", attempt)
-                    return
+                    return True
                 last_error = RuntimeError("Telegram command reply was not delivered")
             except Exception as exc:  # network / DNS failures are transient
                 last_error = exc
                 logger.warning(
-                    "Telegram command reply failed (attempt={}/3): {}", attempt, exc
+                    "Telegram command reply failed (attempt={}/3) | error_type={}",
+                    attempt,
+                    type(exc).__name__,
                 )
             if attempt < 3:
                 await asyncio.sleep(delay)
 
-        logger.error("Telegram command reply permanently failed: {}", last_error)
+        logger.error(
+            "Telegram command reply pending retry | error_type={}",
+            type(last_error).__name__,
+        )
+        return False

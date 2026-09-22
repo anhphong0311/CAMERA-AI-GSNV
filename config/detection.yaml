@@ -33,7 +33,7 @@ max_detections: 100
 default_confidence: 0.5
 
 # Tự load + warmup model khi app startup (false nếu chưa có weight/torch)
-auto_load: true
+auto_load: false
 
 # Số frame warmup khi load model
 warmup_iterations: 3

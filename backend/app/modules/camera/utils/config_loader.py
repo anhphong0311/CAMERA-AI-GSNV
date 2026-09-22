@@ -20,14 +20,19 @@ class CameraStreamConfig(BaseModel):
     # Conservative defaults keep a simultaneous network outage from creating
     # a reconnect storm across all camera workers.
     reconnect_delays: List[int] = Field(default=[5, 15, 30, 60, 120])
-    queue_size: int = Field(default=30, ge=1, le=500)
+    queue_size: int = Field(default=2, ge=1, le=500)
     target_fps: int = Field(default=15, ge=1, le=60)
-    buffer_size: int = Field(default=120, ge=10)
+    buffer_size: int = Field(default=2, ge=1)
     frame_width: int = Field(default=0, ge=0)
     frame_height: int = Field(default=0, ge=0)
     timeout_seconds: int = Field(default=10, ge=1)
     auto_start_enabled: bool = True
     heartbeat_interval_seconds: int = Field(default=5, ge=1)
+    telegram_alerts_enabled: bool = True
+    alert_check_interval_seconds: int = Field(default=5, ge=1)
+    alert_grace_seconds: int = Field(default=30, ge=0)
+    alert_startup_grace_seconds: int = Field(default=180, ge=0)
+    alert_stale_frame_seconds: int = Field(default=30, ge=1)
     # Preview live view (API /frame) — nhẹ hơn full-res
     preview_jpeg_quality: int = Field(default=60, ge=10, le=100)
     preview_max_width: int = Field(default=960, ge=0)

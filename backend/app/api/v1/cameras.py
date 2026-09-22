@@ -139,7 +139,7 @@ async def restart_camera(
     service: CameraService = Depends(get_camera_service),
 ) -> ApiResponse[dict]:
     """Restart worker camera."""
-    status = service.restart_stream(camera_id)
+    status = await service.restart_stream(camera_id)
     return ApiResponse(data=status.to_dict())
 
 

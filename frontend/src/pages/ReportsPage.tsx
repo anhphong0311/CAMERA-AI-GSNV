@@ -30,10 +30,14 @@ export function ReportsPage() {
     [alerts]
   );
 
-  const doExport = (fn: () => void, label: string) => {
-    fn();
-    logAction("download", `report ${label}`);
-    toast.success(`Đã xuất ${label}`);
+  const doExport = async (fn: () => void | Promise<void>, label: string) => {
+    try {
+      await fn();
+      logAction("download", `report ${label}`);
+      toast.success(`Đã xuất ${label}`);
+    } catch {
+      toast.error(`Không xuất được ${label}. Vui lòng thử lại.`);
+    }
   };
 
   const columns: Column<Row>[] = [
@@ -52,13 +56,13 @@ export function ReportsPage() {
         description="Xuất báo cáo vi phạm nhiều định dạng"
         actions={
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => doExport(() => exportExcel(rows, "aems_report.xlsx"), "Excel")}>
+            <Button variant="outline" onClick={() => void doExport(() => exportExcel(rows, "aems_report.xlsx"), "Excel")}>
               <FileSpreadsheet className="h-4 w-4" /> Excel
             </Button>
-            <Button variant="outline" onClick={() => doExport(() => exportPDF(rows, "aems_report.pdf", "AEMS - Báo cáo vi phạm"), "PDF")}>
+            <Button variant="outline" onClick={() => void doExport(() => exportPDF(rows, "aems_report.pdf", "AEMS - Báo cáo vi phạm"), "PDF")}>
               <FileText className="h-4 w-4" /> PDF
             </Button>
-            <Button variant="outline" onClick={() => doExport(() => exportCSV(rows, "aems_report.csv"), "CSV")}>
+            <Button variant="outline" onClick={() => void doExport(() => exportCSV(rows, "aems_report.csv"), "CSV")}>
               <FileDown className="h-4 w-4" /> CSV
             </Button>
           </div>

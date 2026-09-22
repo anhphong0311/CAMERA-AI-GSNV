@@ -56,9 +56,11 @@ export function useManagedCameras() {
       return rows.map(
         (c): CameraStatus => ({
           camera_id: c.id,
+          code: c.code,
           name: c.name ?? c.code,
           status: c.status === "online" ? "online" : "offline",
           fps: c.fps ?? 0,
+          enabled: c.enabled,
         })
       );
     },
@@ -72,9 +74,11 @@ export function useCameraFrame(cameraId: number, enabled = true) {
     queryKey: ["camera-frame", cameraId],
     queryFn: () => get<CameraFrame>(`/cameras/${cameraId}/frame`),
     enabled: enabled && cameraId > 0,
-    // ~5 FPS preview; offset theo id để các ô không poll cùng lúc
-    refetchInterval: 200 + (cameraId % 4) * 40,
-    staleTime: 150,
+    // Preview dashboard không cần 5 request JPEG/giây cho mỗi camera. Với
+    // nhiều camera, encode dồn dập làm nghẽn thread pool và toàn bộ API.
+    // 1 FPS đủ cho màn hình tổng quan; offset để các ô không poll cùng lúc.
+    refetchInterval: 1000 + (cameraId % 5) * 120,
+    staleTime: 800,
     retry: false,
   });
 }

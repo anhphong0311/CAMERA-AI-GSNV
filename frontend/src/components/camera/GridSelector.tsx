@@ -3,13 +3,17 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid } from "lucide-react";
 
-/** Chọn số ô lưới hiển thị camera (1/4/9/16). */
+export type GridSize = number | "all";
+
+/** Chọn số ô lưới hoặc hiển thị tất cả camera đang bật. */
 export function GridSelector({
   value,
   onChange,
+  allCount,
 }: {
-  value: number;
-  onChange: (n: number) => void;
+  value: GridSize;
+  onChange: (n: GridSize) => void;
+  allCount: number;
 }) {
   return (
     <div className="flex items-center gap-1 rounded-md border p-1">
@@ -25,6 +29,14 @@ export function GridSelector({
           {n}
         </Button>
       ))}
+      <Button
+        size="sm"
+        variant={value === "all" ? "default" : "ghost"}
+        className="h-7 px-2 text-xs"
+        onClick={() => onChange("all")}
+      >
+        Tất cả ({allCount})
+      </Button>
     </div>
   );
 }

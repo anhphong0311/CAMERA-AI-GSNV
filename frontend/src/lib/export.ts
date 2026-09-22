@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -9,7 +8,10 @@ import autoTable from "jspdf-autotable";
 
 export type Row = Record<string, string | number | boolean | null | undefined>;
 
-export function exportExcel(rows: Row[], filename = "report.xlsx"): void {
+export async function exportExcel(rows: Row[], filename = "report.xlsx"): Promise<void> {
+  // SheetJS khá lớn; chỉ tải khi người dùng thực sự xuất Excel để lỗi tải
+  // chunk báo cáo không thể làm trắng toàn bộ dashboard/Live Camera.
+  const XLSX = await import("xlsx");
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Report");

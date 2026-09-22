@@ -4,6 +4,7 @@ CameraService — business logic CRUD + điều khiển stream qua CameraManager
 
 from __future__ import annotations
 
+import asyncio
 import threading
 from typing import Dict, List, Optional, Tuple
 
@@ -75,23 +76,33 @@ class CameraService:
         return CameraRead.model_validate(camera)
 
     async def update_camera(self, camera_id: int, data: CameraUpdate) -> CameraRead:
-        """Cập nhật camera; reload worker nếu đang chạy."""
+        """Cập nhật camera, chỉ thay đổi worker khi URL hoặc enabled đổi."""
+        previous = await self._repo.get_by_id(camera_id)
+        if previous is None:
+            raise NotFoundError("Camera", camera_id)
+        previous_url = CameraRepository.resolve_rtsp_url(previous)
+        previously_enabled = previous.enabled
+        was_running = camera_id in self._manager.list_running_ids()
         camera = await self._repo.update(camera_id, data)
-        await self._session.commit()
         rtsp = CameraRepository.resolve_rtsp_url(camera)
         self._manager.register_camera(camera.id, rtsp)
-        if camera_id in self._manager.list_running_ids():
-            self._manager.reload_camera(camera.id, rtsp)
+        if not camera.enabled:
+            if was_running:
+                await asyncio.to_thread(self._manager.stop_camera, camera.id)
+            await self._repo.update_heartbeat(camera.id, "offline")
+        elif camera.enabled and was_running and rtsp != previous_url:
+            # stop/release VideoCapture có thể block vài giây.
+            await asyncio.to_thread(self._manager.reload_camera, camera.id, rtsp)
+        elif camera.enabled and not previously_enabled and not was_running:
+            await asyncio.to_thread(self._manager.start_camera, camera.id, rtsp)
+        await self._session.commit()
+        await self._session.refresh(camera)
         return CameraRead.model_validate(camera)
 
     async def delete_camera(self, camera_id: int) -> None:
         """Dừng worker (nếu có) và xóa DB."""
-        try:
-            self._manager.stop_camera(camera_id)
-        except CameraNotRunningError:
-            pass
-        self._manager.unregister_camera(camera_id)
         await self._repo.delete(camera_id)
+        await asyncio.to_thread(self._manager.unregister_camera, camera_id)
         await self._session.commit()
         logger.info("Camera deleted | id={}", camera_id)
 
@@ -123,13 +134,13 @@ class CameraService:
 
     async def stop_stream_async(self, camera_id: int) -> None:
         """Dừng worker và cập nhật DB status offline."""
-        self.stop_stream(camera_id)
+        await asyncio.to_thread(self.stop_stream, camera_id)
         await self._repo.update_heartbeat(camera_id, "offline")
         await self._session.commit()
 
-    def restart_stream(self, camera_id: int) -> CameraRuntimeStatus:
+    async def restart_stream(self, camera_id: int) -> CameraRuntimeStatus:
         """Restart worker."""
-        self._manager.restart_camera(camera_id)
+        await asyncio.to_thread(self._manager.restart_camera, camera_id)
         return self._manager.get_status(camera_id)
 
     async def get_health(self, camera_id: int) -> CameraHealthRead:

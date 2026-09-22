@@ -1,0 +1,32 @@
+services:
+  postgres:
+    ports: !override
+      - "15432:5432"
+
+  redis:
+    ports: !override
+      - "16379:6379"
+
+  backend:
+    environment:
+      AEMS_PUBLIC_URL: http://localhost:18080
+      BACKEND_CORS_ORIGINS: http://localhost:15173,http://localhost:18080
+      HTTP_PROXY: ${AEMS_HTTP_PROXY:-}
+      HTTPS_PROXY: ${AEMS_HTTPS_PROXY:-}
+      NO_PROXY: localhost,127.0.0.1,postgres,redis,frontend,nginx
+    ports: !override
+      - "18000:8000"
+
+  frontend:
+    build:
+      args:
+        VITE_API_BASE_URL: /api/v1
+        VITE_WS_URL: ""
+    ports: !override
+      - "15173:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+
+  nginx:
+    ports: !override
+      - "18080:80"

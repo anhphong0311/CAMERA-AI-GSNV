@@ -37,9 +37,11 @@ export type EventStatus =
 
 export interface CameraStatus {
   camera_id: number;
+  code?: string;
   name: string;
   status: "online" | "offline" | string;
   fps: number;
+  enabled?: boolean;
 }
 
 export interface ManagedCamera {

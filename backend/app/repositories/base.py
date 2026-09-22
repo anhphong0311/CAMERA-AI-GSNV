@@ -77,5 +77,5 @@ class BaseRepository(Generic[ModelT]):
         Args:
             entity: Model instance cần xóa.
         """
-        self.session.delete(entity)
+        await self.session.delete(entity)
         await self.session.flush()

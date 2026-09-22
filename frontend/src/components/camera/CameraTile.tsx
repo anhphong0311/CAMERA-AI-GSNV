@@ -16,12 +16,16 @@ export function CameraTile({
   frame,
   showOverlay = true,
   liveFeed = true,
+  online = true,
+  compact = false,
 }: {
   cameraId: number;
   cameraName: string;
   frame: DetectionFrame | null;
   showOverlay?: boolean;
   liveFeed?: boolean;
+  online?: boolean;
+  compact?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -30,7 +34,7 @@ export function CameraTile({
   const [paused, setPaused] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [videoReady, setVideoReady] = useState(0);
-  const { data: liveFrame } = useCameraFrame(cameraId, liveFeed);
+  const { data: liveFrame } = useCameraFrame(cameraId, liveFeed && online);
 
   frameRef.current = frame;
 
@@ -43,6 +47,12 @@ export function CameraTile({
     };
     img.src = `data:image/jpeg;base64,${liveFrame.image_base64}`;
   }, [liveFrame?.image_base64, liveFrame?.frame_id]);
+
+  useEffect(() => {
+    if (online) return;
+    videoImgRef.current = null;
+    setVideoReady((n) => n + 1);
+  }, [online]);
 
   useEffect(() => {
     if (paused) return;
@@ -64,7 +74,7 @@ export function CameraTile({
       if (liveFeed && !liveFrame) {
         ctx.fillStyle = "rgba(148,163,184,0.6)";
         ctx.font = "12px sans-serif";
-        ctx.fillText("Đang kết nối RTSP...", 12, H / 2);
+        ctx.fillText(online ? "Đang kết nối RTSP..." : "Camera đang offline", 12, H / 2);
       }
     }
 
@@ -113,7 +123,7 @@ export function CameraTile({
         ctx.fillText("📱 Điện thoại", 8, H - 8);
       }
     }
-  }, [paused, showOverlay, liveFeed, liveFrame, frame, videoReady]);
+  }, [paused, showOverlay, liveFeed, online, liveFrame, frame, videoReady]);
 
   const screenshot = () => {
     const canvas = canvasRef.current;
@@ -133,11 +143,11 @@ export function CameraTile({
   return (
     <div
       ref={wrapRef}
-      className="group relative overflow-hidden rounded-lg border bg-black"
+      className={cn("group relative overflow-hidden rounded-lg border bg-black", compact && "h-full min-h-0")}
     >
       <canvas
         ref={canvasRef}
-        className="aspect-video w-full origin-center transition-transform"
+        className={cn("w-full origin-center transition-transform", compact ? "h-full" : "aspect-video")}
         style={{ transform: `scale(${zoom})` }}
       />
 

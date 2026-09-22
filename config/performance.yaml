@@ -75,7 +75,7 @@ network:
 
 # Pipeline bridge — nối Camera → AI → downstream (async workers)
 pipeline:
-  enabled: true
+  enabled: false
   poll_interval_ms: 50       # 20 vòng/giây là đủ cho target AI 1 FPS
   chain_tracking: true        # tracking + behavior cho nhận diện cầm điện thoại
   chain_behavior: true

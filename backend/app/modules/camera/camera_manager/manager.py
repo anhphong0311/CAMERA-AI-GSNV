@@ -65,7 +65,10 @@ class CameraManager:
 
     def unregister_camera(self, camera_id: int) -> None:
         """Dừng và gỡ camera khỏi manager."""
-        self.stop_camera(camera_id)
+        try:
+            self.stop_camera(camera_id)
+        except CameraNotRunningError:
+            pass
         with self._lock:
             self._rtsp_urls.pop(camera_id, None)
 

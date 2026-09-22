@@ -8,15 +8,15 @@
 # CPU và API responsive thay vì 6 luồng đồng thời tạo kết nối RTSP liên tục.
 reconnect_delays: [5, 15, 30, 60, 120]
 
-# Kích thước queue frame mỗi camera (bounded — drop oldest khi đầy)
-# Preview/dashboard chỉ cần latest; evidence dùng buffer riêng (evidence.yaml)
-queue_size: 12
+# Preview/dashboard chỉ cần frame mới nhất; evidence dùng buffer riêng.
+# Giữ 2 frame gốc mỗi camera để tránh chiếm nhiều GB RAM khi chạy nhiều luồng 1080p.
+queue_size: 2
 
 # FPS mục tiêu khi đọc stream (sleep giữa các frame nếu đọc quá nhanh)
-target_fps: 5
+target_fps: 2
 
-# Circular buffer camera service — đủ cho health/FPS (~3s @ 15fps)
-buffer_size: 30
+# Buffer frame gốc của worker; health/FPS không cần giữ lịch sử ảnh.
+buffer_size: 2
 
 # Resize frame khi đọc (0 = giữ nguyên kích thước gốc)
 frame_width: 0
@@ -30,6 +30,14 @@ auto_start_enabled: true
 
 # Chu kỳ ghi heartbeat vào DB (giây)
 heartbeat_interval_seconds: 5
+
+# Cảnh báo Telegram cho camera enabled khi mất kết nối, không có worker,
+# hoặc không có frame mới. Gửi một lần sau thời gian chờ và báo khi phục hồi.
+telegram_alerts_enabled: true
+alert_check_interval_seconds: 5
+alert_grace_seconds: 30
+alert_startup_grace_seconds: 180
+alert_stale_frame_seconds: 30
 
 # Preview live view (GET /cameras/{id}/frame) — giảm lag dashboard
 preview_jpeg_quality: 50
