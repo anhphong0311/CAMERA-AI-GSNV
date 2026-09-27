@@ -12,8 +12,9 @@ reconnect_delays: [5, 15, 30, 60, 120]
 # Giữ 2 frame gốc mỗi camera để tránh chiếm nhiều GB RAM khi chạy nhiều luồng 1080p.
 queue_size: 2
 
-# FPS mục tiêu khi đọc stream (sleep giữa các frame nếu đọc quá nhanh)
-target_fps: 2
+# FPS mục tiêu đưa vào buffer/AI. Worker vẫn đọc liên tục để RTSP/TCP không
+# tích lũy frame cũ; 8 FPS đủ mượt cho live grid nhiều substream trên CPU.
+target_fps: 8
 
 # Buffer frame gốc của worker; health/FPS không cần giữ lịch sử ảnh.
 buffer_size: 2

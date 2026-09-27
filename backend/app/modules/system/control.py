@@ -54,10 +54,33 @@ class SystemControlService:
     def is_monitoring(self) -> bool:
         return self._monitoring
 
+    def _runtime_needs_recovery(self) -> bool:
+        """Return True when a present runtime component is unexpectedly down."""
+        try:
+            ai = getattr(self._app.state, "ai_service", None)
+            if ai is not None and not bool(
+                ai.get_statistics().get("pipeline_running")
+            ):
+                return True
+        except Exception:
+            return True
+        try:
+            perf = getattr(self._app.state, "performance", None)
+            if perf is not None:
+                orchestrator = perf.orchestrator
+                config = getattr(orchestrator, "_config", None)
+                enabled = bool(getattr(config, "enabled", True))
+                if enabled and not bool(getattr(orchestrator, "_running", False)):
+                    return True
+        except Exception:
+            return True
+        return False
+
     def status_text(self) -> str:
         cams = 0
         pipeline = False
         orchestrator = False
+        orchestrator_enabled = True
         try:
             manager = getattr(self._app.state, "camera_manager", None)
             if manager is not None:
@@ -73,7 +96,11 @@ class SystemControlService:
         try:
             perf = getattr(self._app.state, "performance", None)
             if perf is not None:
-                orchestrator = bool(getattr(perf.orchestrator, "_running", False))
+                orchestrator_obj = perf.orchestrator
+                orchestrator = bool(getattr(orchestrator_obj, "_running", False))
+                orchestrator_enabled = bool(
+                    getattr(getattr(orchestrator_obj, "_config", None), "enabled", True)
+                )
         except Exception:
             pass
 
@@ -83,7 +110,8 @@ class SystemControlService:
             f"{icon} Hệ thống giám sát: {state}\n"
             f"Camera đang chạy: {cams}\n"
             f"AI pipeline: {'on' if pipeline else 'off'}\n"
-            f"Orchestrator: {'on' if orchestrator else 'off'}\n"
+            f"Orchestrator: "
+            f"{'disabled' if not orchestrator_enabled else ('on' if orchestrator else 'off')}\n"
             f"(API + Telegram bot vẫn hoạt động để nhận lệnh)"
         )
 
@@ -140,11 +168,16 @@ class SystemControlService:
 
     async def turn_on(self) -> str:
         async with self._lock:
-            if self._monitoring:
+            if self._monitoring and not self._runtime_needs_recovery():
                 return (
                     "🟢 Hệ thống đang bật sẵn.\n"
                     f"{viewing_links_text()}\n"
                     "Gõ /tat hoặc /system_off để tắt."
+                )
+
+            if self._monitoring:
+                logger.warning(
+                    "System marked ON but runtime is incomplete — recovering"
                 )
 
             logger.warning("System ON requested via control service")

@@ -79,6 +79,7 @@ services:
       EVIDENCE_CONFIG_PATH: /config/evidence.yaml
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_OFFSET_PATH: /app/logs/telegram-command.offset
       SYSTEM_STATE_PATH: /app/logs/system_state.json
       AEMS_PUBLIC_URL: ${AEMS_PUBLIC_URL:-http://localhost:8080}
       AEMS_REALTIME_DEMO: ${AEMS_REALTIME_DEMO:-false}

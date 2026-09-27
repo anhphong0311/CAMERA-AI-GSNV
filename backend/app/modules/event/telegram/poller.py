@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+from pathlib import Path
 import time
 from typing import Any, Awaitable, Callable, Optional, Union
 
@@ -29,11 +30,13 @@ class TelegramCommandPoller:
         service: EventService,
         *,
         command_handler: CommandHandler,
+        offset_path: Optional[Path] = None,
     ) -> None:
         self._config = config
         self._service = service
         self._handle = command_handler
-        self._offset: Optional[int] = None
+        self._offset_path = Path(offset_path) if offset_path else None
+        self._offset: Optional[int] = self._read_persisted_offset()
         self._task: Optional[asyncio.Task] = None
         self._running = False
         self._last_poll_error_log = 0.0
@@ -83,6 +86,7 @@ class TelegramCommandPoller:
     def _fetch_updates(self) -> list[dict[str, Any]]:
         import httpx
 
+        self._refresh_persisted_offset()
         params: dict[str, Any] = {"timeout": 25}
         if self._offset is not None:
             params["offset"] = self._offset
@@ -96,6 +100,39 @@ class TelegramCommandPoller:
             raise RuntimeError(data.get("description", "getUpdates failed"))
         return data.get("result") or []
 
+    def _read_persisted_offset(self) -> Optional[int]:
+        if self._offset_path is None:
+            return None
+        try:
+            raw = self._offset_path.read_text(encoding="ascii").strip()
+            return int(raw) if raw else None
+        except (FileNotFoundError, ValueError, OSError):
+            return None
+
+    def _refresh_persisted_offset(self) -> None:
+        persisted = self._read_persisted_offset()
+        if persisted is not None and (
+            self._offset is None or persisted > self._offset
+        ):
+            self._offset = persisted
+
+    def _set_offset(self, offset: Optional[int]) -> None:
+        self._offset = offset
+        if offset is None or self._offset_path is None:
+            return
+        try:
+            self._offset_path.parent.mkdir(parents=True, exist_ok=True)
+            temp_path = self._offset_path.with_suffix(
+                self._offset_path.suffix + ".tmp"
+            )
+            temp_path.write_text(str(offset), encoding="ascii")
+            temp_path.replace(self._offset_path)
+        except OSError as exc:
+            logger.warning(
+                "Telegram offset persistence failed | error_type={}",
+                type(exc).__name__,
+            )
+
     def _is_allowed_chat(self, chat_id: Any) -> bool:
         allowed = str(self._config.chat_id or "").strip()
         if not allowed:
@@ -108,17 +145,17 @@ class TelegramCommandPoller:
 
         message = update.get("message") or update.get("edited_message")
         if not message:
-            self._offset = next_offset
+            self._set_offset(next_offset)
             return True
         text = (message.get("text") or "").strip()
         if not text.startswith("/"):
-            self._offset = next_offset
+            self._set_offset(next_offset)
             return True
 
         chat = message.get("chat") or {}
         chat_id = chat.get("id")
         if chat_id is None:
-            self._offset = next_offset
+            self._set_offset(next_offset)
             return True
 
         if not self._is_allowed_chat(chat_id):
@@ -126,7 +163,7 @@ class TelegramCommandPoller:
                 "Telegram command ignored from unauthorized chat_id={}",
                 chat_id,
             )
-            self._offset = next_offset
+            self._set_offset(next_offset)
             return True
 
         cmd = text.split("@")[0]
@@ -142,7 +179,7 @@ class TelegramCommandPoller:
 
         if not await self._send_reply(str(chat_id), reply):
             return False
-        self._offset = next_offset
+        self._set_offset(next_offset)
         return True
 
     async def _send_reply(self, chat_id: str, reply: str) -> bool:

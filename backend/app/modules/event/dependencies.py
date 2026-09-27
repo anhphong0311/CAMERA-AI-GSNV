@@ -9,6 +9,8 @@ Khởi tạo EventService, chạy background loop:
 from __future__ import annotations
 
 import asyncio
+import os
+from pathlib import Path
 from typing import Optional
 
 from fastapi import Request
@@ -62,6 +64,12 @@ async def init_event_module(app) -> EventService:
             service._telegram_config,
             service,
             command_handler=service.handle_command,
+            offset_path=Path(
+                os.getenv(
+                    "TELEGRAM_OFFSET_PATH",
+                    "logs/telegram-command.offset",
+                )
+            ),
         )
         _poller.start()
 

@@ -41,6 +41,10 @@ export function LiveCameraPage() {
   const cols = grid === "all" ? Math.ceil(Math.sqrt(visibleCount)) : Math.sqrt(grid);
   const rows = Math.ceil(visibleCount / cols);
   const compact = grid === "all" || grid === 16;
+  // Ưu tiên độ mượt khi xem ít camera; tự hạ nhẹ tần suất khi mở cả lưới để
+  // tránh hàng chục request JPEG đến cùng lúc. Backend cung cấp tối đa 8 FPS.
+  const refreshIntervalMs =
+    visibleCount <= 1 ? 125 : visibleCount <= 4 ? 200 : visibleCount <= 9 ? 250 : visibleCount <= 16 ? 333 : 400;
 
   const list = sortedCameras.slice(0, visibleCount);
   // Bổ sung ô trống nếu ít camera hơn lưới
@@ -79,8 +83,11 @@ export function LiveCameraPage() {
               frame={detections[cam.camera_id] ?? null}
               showOverlay={overlay}
               liveFeed={hasManaged}
-              online={cam.status === "online"}
+              // Vẫn poll trong lúc worker reconnect để hình tự phục hồi ngay,
+              // không phải chờ vòng cập nhật trạng thái camera tiếp theo.
+              online={cam.status !== "offline"}
               compact={compact}
+              refreshIntervalMs={refreshIntervalMs}
             />
           ) : (
             <div

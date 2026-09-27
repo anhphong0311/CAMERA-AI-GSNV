@@ -69,16 +69,19 @@ export function useManagedCameras() {
 }
 
 /** Poll frame JPEG mới nhất từ RTSP worker (stagger theo cameraId để tránh burst). */
-export function useCameraFrame(cameraId: number, enabled = true) {
+export function useCameraFrame(
+  cameraId: number,
+  enabled = true,
+  refreshIntervalMs = 400
+) {
   return useQuery({
     queryKey: ["camera-frame", cameraId],
     queryFn: () => get<CameraFrame>(`/cameras/${cameraId}/frame`),
     enabled: enabled && cameraId > 0,
-    // Preview dashboard không cần 5 request JPEG/giây cho mỗi camera. Với
-    // nhiều camera, encode dồn dập làm nghẽn thread pool và toàn bộ API.
-    // 1 FPS đủ cho màn hình tổng quan; offset để các ô không poll cùng lúc.
-    refetchInterval: 1000 + (cameraId % 5) * 120,
-    staleTime: 800,
+    // Live grid tự giảm FPS khi có nhiều ô. Offset nhỏ phân tán request giữa
+    // các camera mà không làm giảm đáng kể tốc độ hiển thị.
+    refetchInterval: Math.max(125, refreshIntervalMs) + (cameraId % 7) * 13,
+    staleTime: Math.max(80, refreshIntervalMs / 2),
     retry: false,
   });
 }

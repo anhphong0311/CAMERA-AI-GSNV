@@ -35,3 +35,22 @@ async def test_non_command_is_acknowledged():
         {"update_id": 7, "message": {"text": "hello", "chat": {"id": 123}}}
     )
     assert poller._offset == 8
+
+
+@pytest.mark.asyncio
+async def test_shared_offset_is_loaded_and_persisted(tmp_path):
+    offset_path = tmp_path / "telegram-command.offset"
+    offset_path.write_text("43", encoding="ascii")
+    poller = TelegramCommandPoller(
+        TelegramConfig(enabled=True, bot_token="test-token", chat_id="123"),
+        Mock(),
+        command_handler=lambda command: "pong",
+        offset_path=offset_path,
+    )
+    assert poller._offset == 43
+
+    assert await poller._process_update(
+        {"update_id": 43, "message": {"text": "hello", "chat": {"id": 123}}}
+    )
+    assert poller._offset == 44
+    assert offset_path.read_text(encoding="ascii") == "44"

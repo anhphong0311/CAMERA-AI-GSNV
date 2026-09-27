@@ -41,6 +41,7 @@ class FrameGrabber:
         self._target_fps = target_fps
         self._frame_id = 0
         self._min_interval = 1.0 / target_fps if target_fps > 0 else 0
+        self._last_emit_at = 0.0
         self._on_frame = on_frame
 
     def set_frame_sink(self, sink: Optional[Callable]) -> None:
@@ -53,11 +54,23 @@ class FrameGrabber:
         Returns:
             bool: True nếu đọc thành công.
         """
-        loop_start = time.monotonic()
         frame_data, read_ms, decode_ms = self._client.read_frame()
 
         if frame_data is None:
             return False
+
+        # Không sleep giữa các lần đọc RTSP. Với RTSP/TCP, camera vẫn gửi frame
+        # trong lúc worker ngủ và FFmpeg sẽ tích lũy buffer cũ, khiến hình càng
+        # xem càng trễ. Luôn drain stream ở tốc độ nguồn, nhưng chỉ publish theo
+        # target_fps để giới hạn tải cho buffer/AI/frontend.
+        now = time.monotonic()
+        if (
+            self._min_interval > 0
+            and self._last_emit_at > 0
+            and now - self._last_emit_at < self._min_interval
+        ):
+            return True
+        self._last_emit_at = now
 
         self._frame_id += 1
         packet = FramePacket(
@@ -76,13 +89,6 @@ class FrameGrabber:
                 logger.debug("Frame sink error cam={}: {}", self.camera_id, exc)
         self._fps.record_frame(read_ms, decode_ms)
         self._health.on_frame(self._fps, self._buffer, read_ms)
-
-        # Giới hạn FPS mục tiêu — tránh đọc quá nhanh làm đầy CPU
-        if self._min_interval > 0:
-            elapsed = time.monotonic() - loop_start
-            sleep_time = self._min_interval - elapsed
-            if sleep_time > 0:
-                time.sleep(sleep_time)
 
         return True
 

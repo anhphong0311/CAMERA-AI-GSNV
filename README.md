@@ -40,6 +40,21 @@ docker compose up -d --build
 docker compose exec backend alembic upgrade head
 ```
 
+### Khởi động theo yêu cầu qua Telegram (Windows)
+
+Sau khi đã cấu hình `TELEGRAM_BOT_TOKEN` và `TELEGRAM_CHAT_ID` trong `.env`,
+cài launcher nhẹ chạy ngoài Docker:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\deploy\scripts\install-telegram-bootstrap.ps1
+```
+
+Launcher khởi động cùng Windows nhưng **không tự bật Docker/AEMS**. Khi backend
+đang tắt, gửi `/bat` trong chat Telegram đã cấu hình để launcher khởi động
+Docker, chạy `docker compose up -d`, chờ health check và bật camera/AI. Khi
+backend đã chạy, bot trong ứng dụng tiếp tục xử lý `/bat`, `/tat` và các lệnh
+khác như bình thường.
+
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:8080 |

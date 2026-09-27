@@ -18,6 +18,7 @@ export function CameraTile({
   liveFeed = true,
   online = true,
   compact = false,
+  refreshIntervalMs = 400,
 }: {
   cameraId: number;
   cameraName: string;
@@ -26,6 +27,7 @@ export function CameraTile({
   liveFeed?: boolean;
   online?: boolean;
   compact?: boolean;
+  refreshIntervalMs?: number;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -34,7 +36,11 @@ export function CameraTile({
   const [paused, setPaused] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [videoReady, setVideoReady] = useState(0);
-  const { data: liveFrame } = useCameraFrame(cameraId, liveFeed && online);
+  const { data: liveFrame } = useCameraFrame(
+    cameraId,
+    liveFeed && online,
+    refreshIntervalMs
+  );
 
   frameRef.current = frame;
 

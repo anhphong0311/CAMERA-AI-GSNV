@@ -208,6 +208,14 @@ def test_system_on_off_commands(tmp_path):
 
         again = await service.handle_command("/bat")
         assert "Đường link xem" in again
-        assert "http://localhost:8080/live" in again
+        assert "• Live Camera:" in again
+        assert "/live" in again
+
+        # Persisted ON must not hide a partially stopped runtime. /bat should
+        # heal the missing component instead of returning early.
+        app.state.performance.orchestrator._running = False
+        recovered = await service.handle_command("/bat")
+        assert "BẬT" in recovered or "lỗi" in recovered.lower()
+        assert app.state.performance.orchestrator._running is True
 
     asyncio.run(_run())
