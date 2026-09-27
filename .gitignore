@@ -56,4 +56,5 @@ test-results/
 # ===== Local demo binaries =====
 .demo/
 frontend_bundle.js
+*.backup-key.txt
 
